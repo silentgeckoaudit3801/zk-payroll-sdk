@@ -88,6 +88,35 @@ The SDK calls `redactSensitive` automatically for all events it emits internally
 
 ---
 
+
+## Audit-safe logging hooks
+
+Use `createAuditSafeLogger` when an integration needs progress visibility without exposing payroll inputs. The hook receives structured `LogEvent` entries, but every context object is deeply redacted before it leaves the SDK boundary.
+
+```typescript
+import { createAuditSafeLogger, emitAuditEvent } from "@zk-payroll/core/logging";
+
+const logger = createAuditSafeLogger((entry) => {
+  analytics.capture(entry.event, entry.context);
+});
+
+emitAuditEvent(logger, "validation", "started", {
+  count: 12,
+  amount: 5000000n,      // -> "[redacted]"
+  proofInputs: { witness: "private" },
+});
+```
+
+Normalized audit event names use `audit.<operation>.<status>` where operation is one of `validation`, `proof_setup`, `transaction_building`, `polling`, or `reconciliation`, and status is one of `started`, `progress`, `succeeded`, `failed`, `retrying`, or `skipped`. Failed events are emitted at `error`, retrying events at `warn`, and the rest at `info`.
+
+Set `enabled: false` to disable logging without changing the rest of the integration wiring:
+
+```typescript
+const logger = createAuditSafeLogger(sendToTelemetry, { enabled: false });
+```
+
+Safe metadata includes values such as `txHash`, `ledger`, `attempt`, `durationMs`, `code`, `reason`, and aggregate `count`. Do not add salary amounts, recipients, raw proof inputs, full transaction payloads, secret keys, or raw RPC responses; the audit-safe helpers redact those fields defensively, but integrations should avoid collecting them in the first place.
+
 ## Fields to exclude or redact
 
 The table below lists every field that carries sensitive data in this SDK. Never forward these values to an external analytics system.

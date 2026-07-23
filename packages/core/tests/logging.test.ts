@@ -1,4 +1,11 @@
-import { createHookLogger, redactSensitive, LogEvent } from "../src/logging/SdkLogger";
+import {
+  createAuditSafeLogger,
+  createHookLogger,
+  emitAuditEvent,
+  redactSensitive,
+  sanitizeAuditContext,
+  LogEvent,
+} from "../src/logging/SdkLogger";
 
 describe("createHookLogger", () => {
   it("calls the hook with an info entry", () => {
@@ -104,5 +111,66 @@ describe("redactSensitive", () => {
 
   it("returns empty object for empty input", () => {
     expect(redactSensitive({})).toEqual({});
+  });
+});
+describe("audit-safe logging hooks", () => {
+  it("deeply redacts payroll-sensitive fields before invoking the hook", () => {
+    const entries: LogEvent[] = [];
+    const logger = createAuditSafeLogger((entry) => entries.push(entry));
+
+    logger.info("audit.validation.started", {
+      txHash: "abc123",
+      amount: 1000n,
+      proofInputs: { recipient: "GABC", salary: "5000" },
+      rawResponse: { secret: "do-not-log", ledger: 123 },
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0].context).toEqual({
+      txHash: "abc123",
+      amount: "[redacted]",
+      proofInputs: "[redacted]",
+      rawResponse: "[redacted]",
+    });
+  });
+
+  it("supports a disabled logger that emits nothing", () => {
+    const entries: LogEvent[] = [];
+    const logger = createAuditSafeLogger((entry) => entries.push(entry), { enabled: false });
+
+    logger.info("audit.validation.started", { txHash: "abc123" });
+    logger.warn("audit.polling.retrying", { attempt: 2 });
+    logger.error("audit.reconciliation.failed", { reason: "timeout" });
+
+    expect(entries).toHaveLength(0);
+  });
+
+  it("emits normalized audit events with safe metadata", () => {
+    const entries: LogEvent[] = [];
+    const logger = createHookLogger((entry) => entries.push(entry));
+
+    emitAuditEvent(logger, "transaction_building", "retrying", {
+      txHash: "abc123",
+      attempt: 2,
+      salary: "private",
+      payload: { secretKey: "hidden" },
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0].event).toBe("audit.transaction_building.retrying");
+    expect(entries[0].level).toBe("warn");
+    expect(entries[0].context).toEqual({
+      txHash: "abc123",
+      attempt: 2,
+      salary: "[redacted]",
+      payload: "[redacted]",
+    });
+  });
+
+  it("allows integrations to add custom sensitive fields", () => {
+    expect(sanitizeAuditContext({ tenantId: "internal", count: 3 }, ["tenantId"])).toEqual({
+      tenantId: "[redacted]",
+      count: 3,
+    });
   });
 });
