@@ -1,4 +1,4 @@
-import { ConfigBuilder, ConfigPresets, ClientConfig } from "../src/config";
+import { ConfigBuilder, ConfigPresets, ClientConfig, ConfigValidationError } from "../src/config";
 
 describe("ConfigBuilder and ConfigPresets", () => {
   it("should build a valid config", () => {
@@ -50,6 +50,45 @@ describe("ConfigBuilder and ConfigPresets", () => {
     expect(() => builder.build()).toThrow("proofConfig.zkeyUrl is required.");
   });
 
+
+  it("returns structured validation issues for multiple setup errors", () => {
+    const builder = new ConfigBuilder()
+      .withNetworkUrl("ftp://example.test")
+      .withContractId("invalid_contract_id")
+      .withRetryPolicy({ attempts: 0, delayMs: -1, backoffFactor: 0.5 });
+
+    try {
+      builder.build();
+      throw new Error("Expected ConfigValidationError");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigValidationError);
+      expect((error as ConfigValidationError).issues.map((issue) => issue.field)).toEqual([
+        "networkUrl",
+        "contractId",
+        "retry.attempts",
+        "retry.delayMs",
+        "retry.backoffFactor",
+      ]);
+      expect((error as ConfigValidationError).message).toContain(
+        "Configuration validation failed:"
+      );
+    }
+  });
+
+  it("accepts valid proof artifact URLs and retry policy", () => {
+    const config = new ConfigBuilder()
+      .withNetworkUrl("https://soroban-testnet.stellar.org")
+      .withContractId("CAKZGMMMJOHMSZ5V3DYKCUDNTIWBG57MAMFJDSVICNWUNVXLX6EZN3NC")
+      .withProofConfig({
+        wasmUrl: "https://cdn.example.test/payroll.wasm",
+        zkeyUrl: "https://cdn.example.test/payroll.zkey",
+      })
+      .withRetryPolicy({ attempts: 4, delayMs: 250, backoffFactor: 2 })
+      .build();
+
+    expect(config.retry).toEqual({ attempts: 4, delayMs: 250, backoffFactor: 2 });
+    expect(config.proofConfig?.wasmUrl).toBe("https://cdn.example.test/payroll.wasm");
+  });
   describe("Presets", () => {
     it("should initialize local preset correctly", () => {
       const config = ConfigPresets.local()
