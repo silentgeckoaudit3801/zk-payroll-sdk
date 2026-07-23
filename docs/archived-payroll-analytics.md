@@ -29,7 +29,7 @@ import { HistoryFilterBuilder } from "@zk-payroll/core";
 const query = new HistoryFilterBuilder()
   .forPeriod("2026-06-01", "2026-06-30")
   .withStatuses(["completed"])
-  .withAssets(["native", "USDC"]);
+  .withAssets(["native", "USDC"])
   .paginate({ page: 1, limit: 100 })
   .build();
 
