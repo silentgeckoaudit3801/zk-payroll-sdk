@@ -134,6 +134,22 @@ describe("audit-safe logging hooks", () => {
     });
   });
 
+  it("emits only sanitized entries to EventEmitter listeners", () => {
+    const listenerEntries: LogEvent[] = [];
+    const logger = createAuditSafeLogger(() => undefined);
+    logger.on("log", (entry) => listenerEntries.push(entry));
+
+    logger.info("audit.proof_setup.started", {
+      txHash: "abc123",
+      proofInputs: { witness: "private" },
+    });
+
+    expect(listenerEntries).toHaveLength(1);
+    expect(listenerEntries[0].context).toEqual({
+      txHash: "abc123",
+      proofInputs: "[redacted]",
+    });
+  });
   it("supports a disabled logger that emits nothing", () => {
     const entries: LogEvent[] = [];
     const logger = createAuditSafeLogger((entry) => entries.push(entry), { enabled: false });

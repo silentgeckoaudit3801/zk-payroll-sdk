@@ -116,14 +116,25 @@ export function createAuditSafeLogger(
 ): SdkLogger {
   if (options.enabled === false) return createDisabledLogger();
 
-  return createHookLogger((entry) => {
-    hook({
-      ...entry,
-      context: entry.context
-        ? sanitizeAuditContext(entry.context, options.additionalSensitiveFields)
-        : undefined,
-    });
-  });
+  const emitter = new EventEmitter() as SdkLogger;
+
+  function emit(level: LogLevel, event: string, context?: Record<string, unknown>) {
+    const logEntry: LogEvent = {
+      event,
+      level,
+      context: context ? sanitizeAuditContext(context, options.additionalSensitiveFields) : undefined,
+      timestamp: new Date().toISOString(),
+    };
+    hook(logEntry);
+    emitter.emit("log", logEntry);
+    emitter.emit(event, logEntry);
+  }
+
+  emitter.info = (event, context) => emit("info", event, context);
+  emitter.warn = (event, context) => emit("warn", event, context);
+  emitter.error = (event, context) => emit("error", event, context);
+
+  return emitter;
 }
 
 export function emitAuditEvent(
