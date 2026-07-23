@@ -65,6 +65,7 @@ await service.processPayment({
 ## Features
 
 - **Typed Contract Clients**: Fully typed client wrappers for PayrollRegistry, SalaryCommitment, ProofVerifier, and PaymentExecutor contracts.
+- **Terminology Guide**: Cross-repo naming guidance for payroll runs, commitments, proofs, treasury, audit access, and reconciliation in [`docs/terminology.md`](docs/terminology.md).
 - **ZK Proof Generation**: Client-side proof generation using snarkjs for privacy.
 - **Caching**: Built-in caching for proofs and circuit artifacts.
 - **Error Handling**: Robust error typing and management.
