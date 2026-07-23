@@ -473,3 +473,7 @@ npm run lint
 ```
 
 > Having trouble? See the [Troubleshooting Guide](./docs/TROUBLESHOOTING.md).
+
+## Further Reading
+
+- [Archived payroll analytics](./docs/archived-payroll-analytics.md) - consume stable historical payroll data in reporting pipelines without exposing private payroll details.
