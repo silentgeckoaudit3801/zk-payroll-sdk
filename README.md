@@ -36,11 +36,29 @@ await service.processPayment(
 
 ### Configuration Validations
 
-The `ConfigBuilder` fails fast if required configuration is missing or malformed:
+The `ConfigBuilder` fails fast if required configuration is missing or malformed and exposes structured `issues` for setup UIs and diagnostics:
 
 ```typescript
-// Throws Error: "Configuration validation failed:\n- contractId is malformed: invalid_id"
-ConfigPresets.testnet().withContractId("invalid_id").build();
+import { ConfigPresets, ConfigValidationError } from "@zk-payroll/sdk";
+
+try {
+  ConfigPresets.testnet()
+    .withContractId("invalid_id")
+    .withProofConfig({
+      wasmUrl: "https://cdn.example.com/payroll.wasm",
+      zkeyUrl: "https://cdn.example.com/payroll.zkey",
+    })
+    .withRetryPolicy({ attempts: 3, delayMs: 250, backoffFactor: 2 })
+    .build();
+} catch (error) {
+  if (error instanceof ConfigValidationError) {
+    console.error(error.issues);
+  }
+}
+```
+
+A minimal valid config needs an HTTP(S) `networkUrl`, a valid Soroban contract ID, and complete proof artifact locations when proof generation is configured. Retry settings are optional, but if supplied `attempts` must be at least `1`, `delayMs` must be non-negative, and `backoffFactor` must be at least `1`.
+
 ## Idempotent retries
 
 For safe retries, pass an `idempotencyKey` when processing a payment.
