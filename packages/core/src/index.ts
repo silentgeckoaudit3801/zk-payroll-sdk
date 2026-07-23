@@ -40,7 +40,8 @@ export type {
   UserFriendlyError,
   ErrorMessageOverrides,
 } from "./errors";
-export { DEFAULT_CONFIG } from "./config";
+export { DEFAULT_CONFIG, ConfigBuilder, ConfigPresets, ConfigValidationError } from "./config";
+export type { ClientConfig, ConfigValidationIssue, RetryPolicyConfig } from "./config";
 export * from "./cache";
 export * from "./types";
 export * from "./progress";
