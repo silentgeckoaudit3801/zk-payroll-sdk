@@ -19,6 +19,10 @@ All SDK errors inherit from the base `ZkPayrollError` class.
 
 *(Note: `PayrollError` is deprecated and acts as a backward-compatibility alias for `ZkPayrollError`)*
 
+## Error code reference
+
+See [docs/error-codes.md](error-codes.md) for the centralized category table, retryability guidance, and representative dashboard/backend mappings.
+
 ## Common Error Codes and Context
 
 Every `ZkPayrollError` exposes:
