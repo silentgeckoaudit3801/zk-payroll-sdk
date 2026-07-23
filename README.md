@@ -67,7 +67,7 @@ await service.processPayment({
 - **Typed Contract Clients**: Fully typed client wrappers for PayrollRegistry, SalaryCommitment, ProofVerifier, and PaymentExecutor contracts.
 - **ZK Proof Generation**: Client-side proof generation using snarkjs for privacy.
 - **Caching**: Built-in caching for proofs and circuit artifacts.
-- **Error Handling**: Robust error typing and management.
+- **Error Handling**: Robust error typing and management. See [SDK error codes](./docs/error-codes.md) for stable code mappings.
 - **Mock Testing Environment**: Comprehensive testing utilities for unit tests without a live network.
 
 ## Browser and Backend Usage
